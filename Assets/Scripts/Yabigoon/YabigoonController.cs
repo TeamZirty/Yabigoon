@@ -1,51 +1,161 @@
-using System.Collections;
+ï»¿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class YabigoonController : MonoBehaviour
 {
-
-    // ÀÌµ¿ ¼Óµµ¸¦ Á¶ÀıÇÒ º¯¼ö
+    // ì´ë™ ì†ë„, ì í”„ í˜ ë“± í”Œë ˆì´ì–´ ìŠ¤íƒ¯
     public float moveSpeed = 5f;
+    public float jumpForce = 5f;
 
-    // Rigidbody 2D ÄÄÆ÷³ÍÆ® º¯¼ö
+    // ë•… ê°ì§€ ê´€ë ¨ ë³€ìˆ˜
+    public LayerMask groundLayer;
+    public Transform groundCheck;
+    public float groundCheckRadius = 0.2f;
+
+    // ëŒ€ì‰¬ ê´€ë ¨ ë³€ìˆ˜
+    public float dashForce = 15f;
+    public float dashDuration = 0.2f;
+    public float dashCooldown = 3f;
+
+    // ì»´í¬ë„ŒíŠ¸ ë³€ìˆ˜
     private Rigidbody2D rb;
     public Transform gunHolder;
-    // Start() ÇÔ¼ö¿¡¼­ Rigidbody 2D ÄÄÆ÷³ÍÆ® °¡Á®¿À±â
+    private Animator animator;
+    public DashHUDController dashHUD;
+
+    // ìƒíƒœ ë³€ìˆ˜
+    private bool isGrounded;
+    private bool canJump = true;
+    private bool canDash = true;
+    private bool isDashing = false;
+    private float currentDashCooldown = 0f;
+
+    // ëŒ€ì‹œ ë°©í–¥ì„ ì €ì¥í•  ë³€ìˆ˜
+    private float dashDirection;
+
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
+        animator = GetComponent<Animator>();
+
+        if (dashHUD != null)
+        {
+            dashHUD.UpdateCooldown(0f);
+        }
     }
 
     void Update()
     {
+        // ë§ˆìš°ìŠ¤ ìœ„ì¹˜ë¥¼ ê¸°ë°˜ìœ¼ë¡œ í”Œë ˆì´ì–´ì™€ ì´ì˜ ë°©í–¥ ì „í™˜
         Vector3 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
         Vector3 playerToMouse = mousePos - transform.position;
-
-        // ÇÃ·¹ÀÌ¾î ¹æÇâ ÀüÈ¯ (¿À¸¥ÂÊ: 1, ¿ŞÂÊ: -1)
         if (playerToMouse.x > 0)
         {
-            // ÇÃ·¹ÀÌ¾î°¡ ¿À¸¥ÂÊÀ» º¼ ¶§
             transform.localScale = new Vector3(1, 1, 1);
-            // ÃÑµµ ¿À¸¥ÂÊÀ» º¸µµ·Ï ·ÎÄÃ ½ºÄÉÀÏ Á¶Á¤
             gunHolder.localScale = new Vector3(1, 1, 1);
         }
         else
         {
-            // ÇÃ·¹ÀÌ¾î°¡ ¿ŞÂÊÀ» º¼ ¶§
             transform.localScale = new Vector3(-1, 1, 1);
-            // ÃÑÀ» YÃàÀ¸·Î µÚÁı¾î¼­ ¿ŞÂÊÀ» º¸°Ô ÇÔ
             gunHolder.localScale = new Vector3(-1, 1, 1);
+        }
+
+        // ë•… ê°ì§€
+        bool wasGrounded = isGrounded;
+        isGrounded = Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer);
+
+        if (isGrounded && !wasGrounded)
+        {
+            canJump = true;
+        }
+
+        // ì í”„
+        if (Input.GetKeyDown(KeyCode.Space) && canJump && !isDashing)
+        {
+            Jump();
+            canJump = false;
+        }
+
+        // ëŒ€ì‰¬ ì¿¨íƒ€ì„ ì²˜ë¦¬
+        if (!canDash)
+        {
+            currentDashCooldown -= Time.deltaTime;
+            if (currentDashCooldown <= 0)
+            {
+                canDash = true;
+                currentDashCooldown = 0f;
+                if (dashHUD != null) dashHUD.UpdateCooldown(0f);
+            }
+            else
+            {
+                if (dashHUD != null) dashHUD.UpdateCooldown(currentDashCooldown / dashCooldown);
+            }
+        }
+
+        // ëŒ€ì‰¬
+        if (Input.GetKeyDown(KeyCode.LeftShift) && canDash && !isDashing)
+        {
+            StartCoroutine(Dash());
         }
     }
 
     void FixedUpdate()
     {
-        // Å°º¸µå ÀÔ·Â ¹Ş±â (Horizontal: A, D ¶Ç´Â ¡ç, ¡æ)
         float moveInput = Input.GetAxis("Horizontal");
 
-        // Rigidbody 2DÀÇ ¼Óµµ(velocity)¸¦ Á÷Á¢ Á¶ÀıÇÏ¿© ÀÌµ¿
-        rb.velocity = new Vector2(moveInput * moveSpeed, rb.velocity.y);
+        // ëŒ€ì‰¬ ì¤‘ì´ ì•„ë‹ ë•Œë§Œ ì¼ë°˜ ì´ë™ ì ìš©
+        if (!isDashing)
+        {
+            rb.velocity = new Vector2(moveInput * moveSpeed, rb.velocity.y);
+        }
+
+        // ì• ë‹ˆë©”ì´í„°ì— ì´ë™ ì†ë„ ì „ë‹¬
+        animator.SetFloat("Speed", Mathf.Abs(moveInput));
+
+        // í‚¤ë³´ë“œ ì…ë ¥ì´ ìˆì„ ë•Œë§Œ ë°©í–¥ì„ ê°±ì‹  (ëŒ€ì‹œ ë°©í–¥ì„ ìœ„í•¨)
+        if (moveInput != 0)
+        {
+            dashDirection = moveInput;
+        }
     }
 
+    void Jump()
+    {
+        rb.velocity = new Vector2(rb.velocity.x, 0);
+        rb.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
+    }
+
+    IEnumerator Dash()
+    {
+        canDash = false;
+        isDashing = true;
+        currentDashCooldown = dashCooldown;
+
+        float originalGravity = rb.gravityScale;
+        rb.gravityScale = 0f;
+
+        // í‚¤ë³´ë“œ ì…ë ¥ì´ ì—†ë‹¤ë©´ í”Œë ˆì´ì–´ê°€ ë°”ë¼ë³´ëŠ” ë°©í–¥ìœ¼ë¡œ ëŒ€ì‹œ
+        if (dashDirection == 0)
+        {
+            dashDirection = transform.localScale.x > 0 ? 1f : -1f;
+        }
+
+        // Yì¶• ì†ë„ë¥¼ ìœ ì§€í•˜ë©´ì„œ ëŒ€ì‰¬ í˜ ì ìš©
+        rb.velocity = new Vector2(dashDirection * dashForce, rb.velocity.y);
+
+        yield return new WaitForSeconds(dashDuration);
+
+        isDashing = false;
+        rb.gravityScale = originalGravity;
+    }
+
+    void OnDrawGizmos()
+    {
+        if (groundCheck != null)
+        {
+            Gizmos.color = Color.red;
+            Gizmos.DrawWireSphere(groundCheck.position, groundCheckRadius);
+        }
+    }
 }
