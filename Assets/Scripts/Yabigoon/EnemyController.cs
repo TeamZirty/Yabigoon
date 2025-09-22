@@ -1,26 +1,25 @@
 using UnityEngine;
 using System.Collections;
+
 public class EnemyController : MonoBehaviour
 {
     private SpriteRenderer spriteRenderer;
-    private Animator animator; // Animator ÄÄÆ÷³ÍÆ® º¯¼ö Ãß°¡
+    private Animator animator;
 
     public EnemyHealthBar healthBar;
 
-    // ÀûÀÇ ±âº» ½ºÅÈ
     public float moveSpeed = 3f;
     public int maxHealth = 100;
     public int currentHealth;
-    public int goldOnDeath = 10; // Á×¾úÀ» ¶§ µå·ÓÇÒ °ñµå ¾ç
+    public int goldOnDeath = 10;
 
-    private Transform player; // ÇÃ·¹ÀÌ¾î À§Ä¡¸¦ ÃßÀûÇÒ º¯¼ö
+    private Transform player;
 
-    [Header("¾Ö´Ï¸ŞÀÌ¼Ç")]
-    public float flashDuration = 0.1f; // ¹øÂ½ÀÌ´Â ½Ã°£
+    [Header("ì• ë‹ˆë©”ì´ì…˜")]
+    public float flashDuration = 0.1f;
 
-
-
-
+    private bool isFloating = false;
+    private Rigidbody2D rb;
 
     void Start()
     {
@@ -29,27 +28,75 @@ public class EnemyController : MonoBehaviour
         {
             healthBar.SetHealth(1f);
         }
-        // ¾À¿¡¼­ ÇÃ·¹ÀÌ¾î¸¦ Ã£¾Æ ÂüÁ¶
         player = GameObject.FindGameObjectWithTag("Player").transform;
         spriteRenderer = GetComponent<SpriteRenderer>();
-        animator = GetComponent<Animator>(); // Animator ÄÄÆ÷³ÍÆ® °¡Á®¿À±â
+        animator = GetComponent<Animator>();
+        rb = GetComponent<Rigidbody2D>();
     }
 
     void Update()
     {
-        // ÇÃ·¹ÀÌ¾î°¡ Á¸ÀçÇÏ´ÂÁö È®ÀÎ
+        if (isFloating) return;
+
         if (player != null)
         {
-            // ÇÃ·¹ÀÌ¾î ¹æÇâÀ¸·Î ÀÌµ¿
             transform.position = Vector2.MoveTowards(transform.position, player.position, moveSpeed * Time.deltaTime);
         }
     }
 
-    // ¿ÜºÎ(ÃÑ¾Ë)¿¡¼­ È£ÃâµÉ µ¥¹ÌÁö ÇÔ¼ö
+    public void FloatAway()
+    {
+        if (!isFloating)
+        {
+            StartCoroutine(FloatAndFall());
+        }
+    }
+
+    IEnumerator FloatAndFall()
+    {
+        isFloating = true;
+        if (rb == null)
+        {
+            rb = gameObject.AddComponent<Rigidbody2D>();
+        }
+
+        rb.velocity = Vector2.zero; // Reset velocity
+
+        int originalLayer = gameObject.layer;
+        gameObject.layer = LayerMask.NameToLayer("FloatingEnemy");
+
+        float originalMoveSpeed = moveSpeed;
+        float originalGravity = rb.gravityScale;
+        moveSpeed = 0;
+        rb.gravityScale = -0.2f; // Float up
+
+        float floatStartTime = Time.time;
+        float startY = transform.position.y;
+
+        while (Time.time < floatStartTime + 5f && transform.position.y < startY + 6f)
+        {
+            yield return null;
+        }
+
+        Bullet balloon = GetComponentInChildren<Bullet>();
+        if (balloon != null && balloon.isBalloon)
+        {
+            balloon.transform.SetParent(null);
+            ObjectPoolManager.Instance.ReturnBullet(balloon.gameObject);
+        }
+
+        // Restore state
+        gameObject.layer = originalLayer;
+        rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
+        rb.gravityScale = originalGravity;
+        moveSpeed = originalMoveSpeed;
+        isFloating = false;
+    }
+
     public void TakeDamage(int damageAmount)
     {
         currentHealth -= damageAmount;
-        Debug.Log("ÀûÀÌ µ¥¹ÌÁö¸¦ ÀÔ¾ú½À´Ï´Ù! ³²Àº Ã¼·Â: " + currentHealth);
+        Debug.Log("ì ì´ ë°ë¯¸ì§€ë¥¼ ì…ì—ˆìŠµë‹ˆë‹¤! í˜„ì¬ ì²´ë ¥: " + currentHealth);
 
         if (animator != null)
         {
@@ -62,25 +109,22 @@ public class EnemyController : MonoBehaviour
             healthBar.SetHealth(healthFraction);
         }
 
-
         if (currentHealth <= 0)
         {
             Die();
         }
     }
 
-    // ÀûÀÌ Á×¾úÀ» ¶§ ½ÇÇàµÇ´Â ÇÔ¼ö
     void Die()
     {
-        // °ñµå È¹µæ
         if (PlayerStatus.Instance != null)
         {
             PlayerStatus.Instance.AddGold(goldOnDeath);
         }
-
-        // Àû ¿ÀºêÁ§Æ® ÆÄ±«
+        if (SoundManager.Instance != null)
+        {
+            SoundManager.Instance.PlaySFX(SoundManager.Instance.enemyDeathSFX);
+        }
         Destroy(gameObject);
     }
-
-    
 }

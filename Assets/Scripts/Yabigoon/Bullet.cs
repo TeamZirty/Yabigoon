@@ -1,21 +1,56 @@
-// Bullet.cs 스크립트
+// Bullet.cs 
 using UnityEngine;
 
 public class Bullet : MonoBehaviour
 {
-    public int damage = 10; // 총알 데미지
+    private int damage = 10; // Default damage
+
+    public void SetDamage(int newDamage)
+    {
+        damage = newDamage;
+    }
+    public bool isBalloon = false; //  
+
+    private Rigidbody2D rb;
+    private Collider2D col;
+
+    void Awake()
+    {
+        rb = GetComponent<Rigidbody2D>();
+        col = GetComponent<Collider2D>();
+    }
+
+    void OnEnable()
+    {
+        //      
+        if (rb != null) rb.isKinematic = false;
+        if (col != null) col.enabled = true;
+    }
 
     void OnCollisionEnter2D(Collision2D collision)
     {
-        // 충돌한 오브젝트가 적인지 확인
         EnemyController enemy = collision.gameObject.GetComponent<EnemyController>();
         if (enemy != null)
-        {
-            enemy.TakeDamage(damage); // 적에게 데미지 적용
+        { 
+            if (isBalloon)
+            {
+                //  
+                enemy.FloatAway();
+                transform.SetParent(collision.transform); //   
+                rb.isKinematic = true; //      
+                col.enabled = false; //   
+            }
+            else
+            {
+                //  
+                enemy.TakeDamage(damage);
+                ObjectPoolManager.Instance.ReturnBullet(gameObject);
+            }
         }
-
-        // 총알 오브젝트 풀로 반환
-        // Destroy(gameObject); // (테스트용)
-        ObjectPoolManager.Instance.ReturnBullet(gameObject);
+        else
+        {
+            //      
+            ObjectPoolManager.Instance.ReturnBullet(gameObject);
+        }
     }
 }
