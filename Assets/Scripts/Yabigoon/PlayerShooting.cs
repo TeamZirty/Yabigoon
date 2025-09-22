@@ -41,7 +41,7 @@ public class PlayerShooting : MonoBehaviour
     {
         HandleWeaponSwitching();
         HandleAttack();
-        HandleGrenadeThrow(); // New: Handle grenade throwing input
+        HandleGrenadeThrow(); // Handle grenade throwing input
     }
 
     void HandleWeaponSwitching()
@@ -103,12 +103,13 @@ public class PlayerShooting : MonoBehaviour
 
             if (rb != null)
             {
-                Vector2 throwDirection = weaponHolder.right;
-                // Check player's facing direction (assuming weaponHolder's parent scale reflects player direction)
-                if (weaponHolder.parent != null && weaponHolder.parent.localScale.x < 0)
-                {
-                    throwDirection = -throwDirection; // Flip direction if player is facing left
-                }
+                // Get mouse position in world coordinates
+                Vector3 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+                mousePos.z = 0; // Ensure z-axis is 0 for 2D
+
+                // Calculate direction from weaponHolder to mouse
+                Vector2 throwDirection = (mousePos - weaponHolder.position).normalized;
+
                 rb.AddForce(throwDirection * grenadeThrowForce, ForceMode2D.Impulse);
             }
         }
@@ -127,7 +128,7 @@ public class PlayerShooting : MonoBehaviour
         }
 
         currentWeaponIndex = newIndex;
-        currentWeapon = ownedWeapons[currentWeaponIndex];
+        currentWeapon = ownedWeapons[newIndex];
         currentWeapon.Equip();
 
         nextAttackTime = Time.time;
