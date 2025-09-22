@@ -16,6 +16,7 @@ public class Grenade : MonoBehaviour
     private bool hasExploded = false;
 
     void Start()
+
     {
         if (explosionDelay > 0)
         {
