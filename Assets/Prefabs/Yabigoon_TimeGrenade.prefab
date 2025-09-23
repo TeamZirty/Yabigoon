@@ -169,7 +169,7 @@ MonoBehaviour:
     m_Bits: 512
   isTimeGrenade: 1
   slowDuration: 5
-  slowFactor: 0.9
+  slowFactor: 0.1
   explosionEffectPrefab: {fileID: 2433282508537954060, guid: 3ef3ae421f71c5c4e97fe12dc2fc6312, type: 3}
   shockwavePrefab: {fileID: 0}
   explosionSound: {fileID: 8300000, guid: af0809d329205634faa91655a2019eec, type: 3}
