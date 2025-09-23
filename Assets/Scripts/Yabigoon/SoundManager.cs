@@ -8,11 +8,11 @@ public class SoundManager : MonoBehaviour
     public AudioSource bgmAudioSource;
     public AudioSource sfxAudioSource;
 
-    [Header("»ç¿îµå Å¬¸³")]
-    public AudioClip shootSFX; // ÃÑ ¹ß»ç È¿°úÀ½
-    public AudioClip enemyDeathSFX; // Àû »ç¸Á È¿°úÀ½
-    public AudioClip levelBGM; // ·¹º§ ¹è°æÀ½¾Ç
-    public AudioClip menuBGM; // ¸Þ´º ¹è°æÀ½¾Ç
+    [Header("ï¿½ï¿½ï¿½ï¿½ Å¬ï¿½ï¿½")]
+    public AudioClip shootSFX; // ï¿½ï¿½ ï¿½ß»ï¿½ È¿ï¿½ï¿½ï¿½ï¿½
+    public AudioClip enemyDeathSFX; // ï¿½ï¿½ ï¿½ï¿½ï¿½ È¿ï¿½ï¿½ï¿½ï¿½
+    public AudioClip levelBGM; // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    public AudioClip menuBGM; // ï¿½Þ´ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
     void Awake()
     {
@@ -25,6 +25,53 @@ public class SoundManager : MonoBehaviour
         {
             Destroy(gameObject);
         }
+    }
+
+    // --- BGM Switching Logic ---
+
+    [Header("Background Music")]
+    public AudioClip[] bgmTracks; // Assign your BGM clips here in the Inspector
+    private int currentTrackIndex = 0;
+
+    void Start()
+    {
+        // Play the first BGM track on start, if it exists
+        if (bgmTracks != null && bgmTracks.Length > 0)
+        {
+            // Make sure the BGM source is set to loop
+            bgmAudioSource.loop = true;
+            PlayBGM(bgmTracks[currentTrackIndex]);
+        }
+    }
+
+    void Update()
+    {
+        // Check for input to change the BGM
+        if (Input.GetKeyDown(KeyCode.Alpha0))
+        {
+            ChangeToNextBGM();
+        }
+    }
+
+    // Switches to the next BGM in the tracks list
+    public void ChangeToNextBGM()
+    {
+        if (bgmTracks == null || bgmTracks.Length <= 1)
+        {
+            return; // No tracks to switch to
+        }
+
+        // Move to the next track
+        currentTrackIndex++;
+
+        // If we've gone past the end of the list, loop back to the start
+        if (currentTrackIndex >= bgmTracks.Length)
+        {
+            currentTrackIndex = 0;
+        }
+
+        // Play the new track
+        PlayBGM(bgmTracks[currentTrackIndex]);
     }
 
     public void PlaySFX(AudioClip clip)

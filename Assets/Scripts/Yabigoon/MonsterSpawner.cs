@@ -36,6 +36,22 @@ public class MonsterSpawner : MonoBehaviour
     void SpawnMonster()
     {
         Instantiate(monsterPrefab, spawnPoint.position, spawnPoint.rotation);
-        Debug.Log("A monster has spawned!");
+        Debug.Log("A monster has spawned! Interval: " + spawnInterval);
+    }
+
+    // Call this to make spawning faster
+    public void DecreaseInterval(float amount)
+    {
+        spawnInterval -= amount;
+        if (spawnInterval < 1f) // Set a minimum spawn time of 1 second
+        {
+            spawnInterval = 1f;
+        }
+    }
+
+    // Call this to make spawning slower
+    public void IncreaseInterval(float amount)
+    {
+        spawnInterval += amount;
     }
 }
