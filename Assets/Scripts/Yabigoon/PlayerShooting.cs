@@ -15,7 +15,11 @@ public class PlayerShooting : MonoBehaviour
 
     [Header("Grenade Setup")]
     public GameObject grenadePrefab;
+    public GameObject timeGrenadePrefab; // Add this line
     public float grenadeThrowForce = 10f;
+
+    [Header("Sound Effects")]
+    public AudioClip switchSound;
 
     void Start()
     {
@@ -42,23 +46,12 @@ public class PlayerShooting : MonoBehaviour
         HandleWeaponSwitching();
         HandleAttack();
         HandleGrenadeThrow(); // Handle grenade throwing input
+        HandleTimeGrenadeThrow();
     }
 
     void HandleWeaponSwitching()
     {
         if (ownedWeapons.Count <= 1) return;
-
-        float scroll = Input.GetAxis("Mouse ScrollWheel");
-        if (scroll > 0f)
-        {
-            SwitchWeapon((currentWeaponIndex + 1) % ownedWeapons.Count);
-        }
-        else if (scroll < 0f)
-        {
-            int prevIndex = currentWeaponIndex - 1;
-            if (prevIndex < 0) prevIndex = ownedWeapons.Count - 1;
-            SwitchWeapon(prevIndex);
-        }
 
         for (int i = 0; i < ownedWeapons.Count; i++)
         {
@@ -89,7 +82,7 @@ public class PlayerShooting : MonoBehaviour
 
     void HandleGrenadeThrow()
     {
-        if (Input.GetKeyDown(KeyCode.G))
+        if (Input.GetKeyDown(KeyCode.Alpha4))
         {
             if (grenadePrefab == null)
             {
@@ -99,6 +92,34 @@ public class PlayerShooting : MonoBehaviour
 
             // Instantiate grenade at the weaponHolder's position
             GameObject grenade = Instantiate(grenadePrefab, weaponHolder.position, Quaternion.identity);
+            Rigidbody2D rb = grenade.GetComponent<Rigidbody2D>();
+
+            if (rb != null)
+            {
+                // Get mouse position in world coordinates
+                Vector3 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+                mousePos.z = 0; // Ensure z-axis is 0 for 2D
+
+                // Calculate direction from weaponHolder to mouse
+                Vector2 throwDirection = (mousePos - weaponHolder.position).normalized;
+
+                rb.AddForce(throwDirection * grenadeThrowForce, ForceMode2D.Impulse);
+            }
+        }
+    }
+
+    void HandleTimeGrenadeThrow()
+    {
+        if (Input.GetKeyDown(KeyCode.Alpha5))
+        {
+            if (timeGrenadePrefab == null)
+            {
+                Debug.LogWarning("Time Grenade Prefab is not assigned in the Inspector!");
+                return;
+            }
+
+            // Instantiate grenade at the weaponHolder's position
+            GameObject grenade = Instantiate(timeGrenadePrefab, weaponHolder.position, Quaternion.identity);
             Rigidbody2D rb = grenade.GetComponent<Rigidbody2D>();
 
             if (rb != null)
@@ -130,6 +151,11 @@ public class PlayerShooting : MonoBehaviour
         currentWeaponIndex = newIndex;
         currentWeapon = ownedWeapons[newIndex];
         currentWeapon.Equip();
+
+        if (SoundManager.Instance != null && switchSound != null)
+        {
+            SoundManager.Instance.PlaySFX(switchSound);
+        }
 
         nextAttackTime = Time.time;
     }

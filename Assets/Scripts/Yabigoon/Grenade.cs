@@ -9,8 +9,14 @@ public class Grenade : MonoBehaviour
     public float explosionDelay = 3f; // Time before explosion, 0 for impact explosion
     public LayerMask enemyLayers;
 
+    [Header("Time Grenade")]
+    public bool isTimeGrenade = false;
+    public float slowDuration = 5f;
+    public float slowFactor = 0.5f;
+
     [Header("Effects")]
     public GameObject explosionEffectPrefab;
+    public GameObject shockwavePrefab;
     public AudioClip explosionSound;
 
     private bool hasExploded = false;
@@ -48,6 +54,10 @@ public class Grenade : MonoBehaviour
         {
             Instantiate(explosionEffectPrefab, transform.position, Quaternion.identity);
         }
+        if (shockwavePrefab != null)
+        {
+            Instantiate(shockwavePrefab, transform.position, Quaternion.identity);
+        }
         if (explosionSound != null && SoundManager.Instance != null)
         {
             SoundManager.Instance.PlaySFX(explosionSound);
@@ -63,6 +73,10 @@ public class Grenade : MonoBehaviour
             if (enemy != null)
             {
                 enemy.TakeDamage(explosionDamage);
+                if (isTimeGrenade)
+                {
+                    enemy.ApplySlow(slowDuration, slowFactor);
+                }
             }
         }
 

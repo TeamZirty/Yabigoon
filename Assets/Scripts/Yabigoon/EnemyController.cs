@@ -14,6 +14,7 @@ public class EnemyController : MonoBehaviour
     public int goldOnDeath = 10;
 
     private Transform player;
+    private bool isSlowed = false;
 
     [Header("애니메이션")]
     public float flashDuration = 0.1f;
@@ -126,5 +127,23 @@ public class EnemyController : MonoBehaviour
             SoundManager.Instance.PlaySFX(SoundManager.Instance.enemyDeathSFX);
         }
         Destroy(gameObject);
+    }
+
+    public void ApplySlow(float duration, float slowFactor)
+    {
+        if (!isSlowed)
+        {
+            StartCoroutine(SlowDown(duration, slowFactor));
+        }
+    }
+
+    IEnumerator SlowDown(float duration, float slowFactor)
+    {
+        isSlowed = true;
+        float originalSpeed = moveSpeed;
+        moveSpeed *= slowFactor;
+        yield return new WaitForSeconds(duration);
+        moveSpeed = originalSpeed;
+        isSlowed = false;
     }
 }

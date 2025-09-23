@@ -18,6 +18,9 @@ public class YabigoonController : MonoBehaviour
     public float dashDuration = 0.2f;
     public float dashCooldown = 3f;
 
+    [Header("Sound Effects")]
+    public AudioClip dashSound;
+
     // 컴포넌트 변수
     private Rigidbody2D rb;
     public Transform gunHolder;
@@ -128,6 +131,11 @@ public class YabigoonController : MonoBehaviour
 
     IEnumerator Dash()
     {
+        if (SoundManager.Instance != null && dashSound != null)
+        {
+            SoundManager.Instance.PlaySFX(dashSound);
+        }
+
         canDash = false;
         isDashing = true;
         currentDashCooldown = dashCooldown;

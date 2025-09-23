@@ -302,7 +302,7 @@ GameObject:
   - component: {fileID: 246730010382212946}
   - component: {fileID: 2990337106396193963}
   - component: {fileID: 6781477324623714604}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: Enemy_Green
   m_TagString: Untagged
   m_Icon: {fileID: 0}
